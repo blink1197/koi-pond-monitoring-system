@@ -27,11 +27,11 @@ const navMain = [
         icon: Radio,
         isActive: true,
         items: [
-            { title: "Temperature", url: "#" },
-            { title: "ph", url: "#" },
-            { title: "Water Level", url: "#" },
-            { title: "Turbidity", url: "#" },
-            { title: "Live Video Feed", url: "#" },
+            { title: "Temperature", url: "/sensors/temperature" },
+            { title: "pH Level", url: "/sensors/ph-level" },
+            { title: "Water Level", url: "/sensors/water-level" },
+            { title: "Turbidity", url: "/sensors/turbidity" },
+            { title: "Live Video Feed", url: "/sensors/#" },
         ],
     },
     {
@@ -77,7 +77,10 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
     }, [])
 
     return (
-        <Sidebar {...props}>
+        <Sidebar
+            {...props}
+            className="bg-background border-r z-50"
+        >
             <SidebarHeader>
                 <div className="flex items-center gap-2 px-2 py-1.5">
                     <Image src="/logo.png" alt="Aqua Sense logo" width={64} height={64} />
