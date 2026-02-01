@@ -1,7 +1,10 @@
+"use client";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 
 export function Hero() {
+  const router = useRouter();
   return (
     <div className="flex flex-col gap-10 items-center">
       {/* Centered Image */}
@@ -26,7 +29,7 @@ export function Hero() {
 
       <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
 
-      <Button>
+      <Button onClick={() => router.push("/auth/login")}>
         Get Started
       </Button>
     </div>
