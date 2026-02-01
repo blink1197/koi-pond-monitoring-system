@@ -1,51 +1,112 @@
-import { AppSidebar } from "@/components/app-sidebar"
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage
-} from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Bubbles, Droplet, Thermometer, Waves } from "lucide-react"
+import Link from "next/link"
 
-export default function Page() {
-
+export default function DashboardPage() {
   return (
-    <SidebarProvider>
-      <AppSidebar side="left" variant="sidebar" collapsible="icon" />
-      <SidebarInset
-        className="transition-all duration-200
-             md:ml-48 group-data-[collapsible=icon]/sidebar-wrapper:md:ml-20"
-      >
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
-            <Breadcrumb>
-              <BreadcrumbList>
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Dashboard</BreadcrumbPage>
-                </BreadcrumbItem>
-              </BreadcrumbList>
-            </Breadcrumb>
-          </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-            <div className="bg-muted/50 aspect-video rounded-xl" />
-          </div>
-          <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+
+      {/* Temperature */}
+      <Card className="w-full min-h-[140px] flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Thermometer className="h-4 w-4 text-muted-foreground" />
+              Temperature
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              Normal
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 text-center">
+          <div className="text-3xl font-bold">26.4°C</div>
+          <p className="text-xs text-muted-foreground">Normal range</p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="ghost" size="sm" asChild className="px-2">
+            <Link href="/sensors/temperature">View details →</Link>
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* pH */}
+      <Card className="w-full min-h-[140px] flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Droplet className="h-4 w-4 text-muted-foreground" />
+              pH Level
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              Normal
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 text-center">
+          <div className="text-3xl font-bold">7.2</div>
+          <p className="text-xs text-muted-foreground">Slightly alkaline</p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="ghost" size="sm" asChild className="px-2">
+            <Link href="/sensors/ph-level">View details →</Link>
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Water Level */}
+      <Card className="w-full min-h-[140px] flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Waves className="h-4 w-4 text-muted-foreground" />
+              Water Level
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              Normal
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 text-center">
+          <div className="text-3xl font-bold">78%</div>
+          <p className="text-xs text-muted-foreground">Optimal</p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="ghost" size="sm" asChild className="px-2">
+            <Link href="/sensors/water-level">View details →</Link>
+          </Button>
+        </CardFooter>
+      </Card>
+
+      {/* Turbidity */}
+      <Card className="w-full min-h-[140px] flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Bubbles className="h-4 w-4 text-muted-foreground" />
+              Turbidity
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              Normal
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 text-center">
+          <div className="text-3xl font-bold">3.1 NTU</div>
+          <p className="text-xs text-muted-foreground">Clear water</p>
+        </CardContent>
+        <CardFooter>
+          <Button variant="ghost" size="sm" asChild className="px-2">
+            <Link href="/sensors/turbidity">View details →</Link>
+          </Button>
+        </CardFooter>
+      </Card>
+
+    </div>
   )
 }
