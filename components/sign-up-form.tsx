@@ -114,7 +114,7 @@ export function SignUpForm({
             </div>
             <div className="mt-4 text-center text-sm">
               <Link
-                href="/auth/sign-up"
+                href="/"
                 className="underline underline-offset-4"
               >
                 Back to home
