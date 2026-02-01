@@ -1,7 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,6 +10,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createClient } from "@/lib/supabase/client";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -110,6 +110,14 @@ export function SignUpForm({
               Already have an account?{" "}
               <Link href="/auth/login" className="underline underline-offset-4">
                 Login
+              </Link>
+            </div>
+            <div className="mt-4 text-center text-sm">
+              <Link
+                href="/auth/sign-up"
+                className="underline underline-offset-4"
+              >
+                Back to home
               </Link>
             </div>
           </form>
