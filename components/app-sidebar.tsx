@@ -63,8 +63,6 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
 
             if (data?.user) {
                 const u = data.user
-
-                console.log(u)
                 setUser({
                     name: "Admin",
                     email: u.email || "",
