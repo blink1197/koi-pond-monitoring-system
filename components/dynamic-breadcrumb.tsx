@@ -32,7 +32,7 @@ export function DynamicBreadcrumb() {
             <BreadcrumbList>
                 <BreadcrumbItem>
                     <BreadcrumbLink asChild>
-                        <Link href="/">Home</Link>
+                        <Link href="/dashboard">Dashboard</Link>
                     </BreadcrumbLink>
                 </BreadcrumbItem>
 
