@@ -30,12 +30,14 @@ export default function TemperaturePage() {
 
             setSensor(sensorData);
 
-            // Fetch valid readings for this sensor
+            // Fetch valid readings from last 24 hours
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
             const { data: readingsData, error: readingsError } = await supabase
                 .from("readings")
                 .select("*")
                 .eq("sensor_id", sensorData.id)
                 .eq("is_valid", true)
+                .gte("recorded_at", oneDayAgo)
                 .order("recorded_at", { ascending: false });
 
             if (readingsError) {

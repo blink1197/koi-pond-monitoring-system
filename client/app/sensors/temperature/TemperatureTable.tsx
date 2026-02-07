@@ -10,6 +10,7 @@ import {
 import {
     Pagination,
     PaginationContent,
+    PaginationEllipsis,
     PaginationItem,
     PaginationLink,
     PaginationNext,
@@ -84,6 +85,25 @@ function getStatusClasses(status: TemperatureStatus): string {
 
 function getStatusLabel(status: TemperatureStatus): string {
     return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function getPageItems(totalPages: number, currentPage: number): (number | 'ellipsis')[] {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+
+    const pages: (number | 'ellipsis')[] = [];
+    pages.push(1);
+
+    const left = Math.max(2, currentPage - 1);
+    const right = Math.min(totalPages - 1, currentPage + 1);
+
+    if (left > 2) pages.push('ellipsis');
+
+    for (let i = left; i <= right; i++) pages.push(i);
+
+    if (right < totalPages - 1) pages.push('ellipsis');
+
+    pages.push(totalPages);
+    return pages;
 }
 
 export default function TemperatureTable({ sensor, readings, loading }: TemperatureTableProps) {
@@ -192,16 +212,22 @@ export default function TemperatureTable({ sensor, readings, loading }: Temperat
                                     />
                                 </PaginationItem>
 
-                                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                    <PaginationItem key={page}>
-                                        <PaginationLink
-                                            onClick={() => handlePageChange(page)}
-                                            isActive={currentPage === page}
-                                            className="cursor-pointer"
-                                        >
-                                            {page}
-                                        </PaginationLink>
-                                    </PaginationItem>
+                                {getPageItems(totalPages, currentPage).map((p, idx) => (
+                                    p === 'ellipsis' ? (
+                                        <PaginationItem key={`e-${idx}`}>
+                                            <PaginationEllipsis />
+                                        </PaginationItem>
+                                    ) : (
+                                        <PaginationItem key={p}>
+                                            <PaginationLink
+                                                onClick={() => handlePageChange(Number(p))}
+                                                isActive={currentPage === p}
+                                                className="cursor-pointer"
+                                            >
+                                                {p}
+                                            </PaginationLink>
+                                        </PaginationItem>
+                                    )
                                 ))}
 
                                 <PaginationItem>
