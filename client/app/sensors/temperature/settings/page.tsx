@@ -202,7 +202,7 @@ export default function TempertureSettingsPage() {
             <form onSubmit={handleSave} className="space-y-6">
                 {/* Cards Grid - Two columns on large screens */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
+                    <div className='flex-col space-y-6'>
                         {/* Basic Information Card */}
                         <Card>
                             <CardHeader>
@@ -276,7 +276,7 @@ export default function TempertureSettingsPage() {
                                 </div>
                             </CardContent>
                         </Card>
-
+                        {/* Data Aggregation Card */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Data Aggregation</CardTitle>
