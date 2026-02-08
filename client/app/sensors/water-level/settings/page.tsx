@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { Toaster, toast } from 'sonner';
 import { Sensor, ThresholdColors } from '../../types';
 
-const SENSOR_TYPES = ['temperature', 'ph', 'turbidity', 'oxygen', 'water_level'];
+const SENSOR_TYPES = ['water level', 'ph', 'turbidity', 'oxygen', 'water_level'];
 const AGGREGATION_INTERVALS = ['hourly', 'daily', 'weekly', 'monthly', 'yearly'];
 
 interface ThresholdLevel {
@@ -31,7 +31,7 @@ interface ThresholdLevel {
 
 const COLOR_OPTIONS: ThresholdColors[] = ['none', 'blue', 'green', 'yellow', 'orange', 'red'];
 
-export default function TempertureSettingsPage() {
+export default function WaterLevelSettingsPage() {
     const [sensor, setSensor] = useState<Sensor | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -54,7 +54,7 @@ export default function TempertureSettingsPage() {
                 const { data, error: fetchError } = await supabase
                     .from('sensors')
                     .select('*')
-                    .eq('type', 'temperature')
+                    .eq('type', 'water_level')
                     .limit(1)
                     .single();
 
@@ -68,8 +68,8 @@ export default function TempertureSettingsPage() {
                 setDescription(data.description || '');
                 setAggregationInterval(data.aggregation_interval || 'daily');
 
-                // Parse thresholds from the temperature key - now as array
-                if (data.thresholds && Array.isArray(data.thresholds.temperature)) {
+                // Parse thresholds from the water_level key - now as array
+                if (data.thresholds && Array.isArray(data.thresholds.water_level)) {
                     // ensure color field exists on items (backwards compatibility) and normalize
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const normalizeColor = (c: any) => {
@@ -78,7 +78,7 @@ export default function TempertureSettingsPage() {
                     };
 
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const parsed = data.thresholds.temperature.map((t: any) => ({
+                    const parsed = data.thresholds.water_level.map((t: any) => ({
                         name: t.name,
                         min: t.min,
                         max: t.max,
@@ -151,7 +151,7 @@ export default function TempertureSettingsPage() {
             // Build thresholds object with array format
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const thresholdsObj: Record<string, any[]> = {
-                temperature: thresholds.map((threshold) => ({
+                water_level: thresholds.map((threshold) => ({
                     name: threshold.name,
                     ...(threshold.min !== undefined && { min: threshold.min }),
                     ...(threshold.max !== undefined && { max: threshold.max }),
@@ -269,7 +269,7 @@ export default function TempertureSettingsPage() {
                                     <Input
                                         id="description"
                                         type="text"
-                                        placeholder="e.g., Main temperature sensor for koi pond"
+                                        placeholder="e.g., Main water level sensor for koi pond"
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                     />
@@ -309,7 +309,7 @@ export default function TempertureSettingsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Thresholds</CardTitle>
-                            <CardDescription>Define temperature ranges for different conditions</CardDescription>
+                            <CardDescription>Define water level ranges for different conditions</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {thresholds.length === 0 ? (
@@ -446,7 +446,7 @@ export default function TempertureSettingsPage() {
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => router.push('/sensors/temperature')}
+                        onClick={() => router.push('/sensors/water level')}
                     >
                         Cancel
                     </Button>
