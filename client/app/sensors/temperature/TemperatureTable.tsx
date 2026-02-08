@@ -25,7 +25,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { getThresholdColorClasses, getThresholdColorStyle } from '@/lib/utils';
+import { findThreshold, getPageItems, getReadingStatus, getStatusLabel, getThresholdColorStyle } from '@/lib/utils';
 import { useState } from 'react';
 import { Reading, Sensor, ThresholdColors } from "../types";
 
@@ -37,112 +37,6 @@ interface TemperatureTableProps {
 
 const ITEMS_PER_PAGE = 10;
 
-function getTemperatureStatus(value: number, thresholds?: Sensor['thresholds']): string {
-    const tempThresholds = thresholds?.temperature;
-    if (!Array.isArray(tempThresholds) || tempThresholds.length === 0) return 'Unknown';
-
-    // First, try to find an exact match
-    for (const threshold of tempThresholds) {
-        const { min, max } = threshold;
-
-        // Check if value falls within this threshold's range
-        if ((min === undefined || value >= min) && (max === undefined || value <= max)) {
-            return threshold.name;
-        }
-    }
-
-    // If no exact match, find the closest threshold
-    let closestThreshold = tempThresholds[0];
-    let closestDistance = Math.abs(value - (closestThreshold.max ?? closestThreshold.min ?? 0));
-
-    for (const threshold of tempThresholds.slice(1)) {
-        const thresholdCenter = threshold.max !== undefined && threshold.min !== undefined
-            ? (threshold.min + threshold.max) / 2
-            : threshold.max ?? threshold.min ?? 0;
-
-        const distance = Math.abs(value - thresholdCenter);
-        if (distance < closestDistance) {
-            closestDistance = distance;
-            closestThreshold = threshold;
-        }
-    }
-
-    return closestThreshold.name;
-}
-
-function getStatusClasses(status: string): string {
-    const statusLower = status.toLowerCase();
-
-    // Map status names to color classes
-    if (statusLower.includes('cold') || statusLower.includes('freezing')) {
-        return 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
-    }
-    if (statusLower.includes('hot') || statusLower.includes('extreme')) {
-        return 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300';
-    }
-    if (statusLower.includes('warm') || statusLower.includes('high')) {
-        return 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300';
-    }
-    if (statusLower.includes('normal') || statusLower.includes('ideal') || statusLower.includes('optimal')) {
-        return 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300';
-    }
-
-    // Default to neutral gray
-    return 'bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-300';
-}
-
-function getStatusLabel(status: string): string {
-    return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
-function findTemperatureThreshold(value: number, thresholds?: Sensor['thresholds']) {
-    const tempThresholds = thresholds?.temperature;
-    if (!Array.isArray(tempThresholds) || tempThresholds.length === 0) return null;
-
-    for (const threshold of tempThresholds) {
-        const { min, max } = threshold;
-        if ((min === undefined || value >= min) && (max === undefined || value <= max)) {
-            return threshold;
-        }
-    }
-
-    // fallback to closest if none matched
-    let closestThreshold = tempThresholds[0];
-    let closestDistance = Math.abs(value - (closestThreshold.max ?? closestThreshold.min ?? 0));
-
-    for (const threshold of tempThresholds.slice(1)) {
-        const thresholdCenter = threshold.max !== undefined && threshold.min !== undefined
-            ? (threshold.min + threshold.max) / 2
-            : threshold.max ?? threshold.min ?? 0;
-
-        const distance = Math.abs(value - thresholdCenter);
-        if (distance < closestDistance) {
-            closestDistance = distance;
-            closestThreshold = threshold;
-        }
-    }
-
-    return closestThreshold;
-}
-
-function getPageItems(totalPages: number, currentPage: number): (number | 'ellipsis')[] {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
-
-    const pages: (number | 'ellipsis')[] = [];
-    pages.push(1);
-
-    const left = Math.max(2, currentPage - 1);
-    const right = Math.min(totalPages - 1, currentPage + 1);
-
-    if (left > 2) pages.push('ellipsis');
-
-    for (let i = left; i <= right; i++) pages.push(i);
-
-    if (right < totalPages - 1) pages.push('ellipsis');
-
-    pages.push(totalPages);
-    return pages;
-}
 
 export default function TemperatureTable({ sensor, readings, loading }: TemperatureTableProps) {
     const [currentPage, setCurrentPage] = useState(1);
@@ -224,14 +118,13 @@ export default function TemperatureTable({ sensor, readings, loading }: Temperat
                                     </TableCell>
                                     <TableCell className="text-center">
                                         {(() => {
-                                            const matched = findTemperatureThreshold(reading.value, sensor?.thresholds);
-                                            const status = matched?.name ?? getTemperatureStatus(reading.value, sensor?.thresholds);
+                                            const matched = findThreshold(reading.value, sensor?.thresholds, 'temperature');
+                                            const status = matched?.name ?? getReadingStatus(reading.value, sensor?.thresholds, 'temperature');
                                             const colorKey = (matched?.color ?? 'none') as ThresholdColors;
-                                            const classes = matched ? getThresholdColorClasses(colorKey) : getStatusClasses(status);
                                             const style = matched ? getThresholdColorStyle(colorKey) : undefined;
 
                                             return (
-                                                <Badge className={classes} style={style}>
+                                                <Badge style={style}>
                                                     {getStatusLabel(status)}
                                                 </Badge>
                                             );

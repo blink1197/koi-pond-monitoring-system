@@ -1,17 +1,17 @@
+export interface Threshold {
+    name: string;
+    min?: number;
+    max?: number;
+    color?: ThresholdColors;
+}
+
 export interface Sensor {
     id: string;
     location: string | null;
     description: string | null;
     model: string | null;
     type: string | null;
-    thresholds?: {
-        temperature?: {
-            cold?: { max: number };
-            normal?: { min: number; max: number };
-            warm?: { min: number; max: number };
-            hot?: { min: number };
-        };
-    };
+    thresholds?: Record<string, Threshold[]>;
 }
 
 export interface Reading {
@@ -27,3 +27,11 @@ export interface SensorWithReading extends Sensor {
 }
 
 export type ThresholdColors = 'none' | 'blue' | 'green' | 'yellow' | 'orange' | 'red';
+
+export type SensorTypes = 'temperature' | 'ph' | 'oxygen' | 'turbidity' | 'water_level';
+
+
+export interface AggregatedPoint {
+    time: string;
+    value: number;
+}

@@ -8,6 +8,15 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AGGREGATION_OPTIONS } from "@/lib/consts";
+import {
+    aggregateDaily,
+    aggregateHourly,
+    aggregateMonthly,
+    aggregateWeekly,
+    aggregateYearly,
+    formatLabel
+} from "@/lib/utils";
 import { useState } from "react";
 import {
     CartesianGrid,
@@ -19,123 +28,12 @@ import {
 } from "recharts";
 import { Reading, Sensor } from "../types";
 
+
 interface TemperatureGraphProps {
     readings: Reading[];
     sensor: Sensor | null;
     loading: boolean;
 }
-
-interface AggregatedPoint {
-    time: string;
-    value: number;
-}
-
-// Aggregate readings into hourly buckets
-function aggregateHourly(readings: Reading[]): AggregatedPoint[] {
-    const buckets: Record<string, number[]> = {};
-    readings.forEach((r) => {
-        const d = new Date(r.recorded_at);
-        const key = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours())).toISOString();
-        buckets[key] = buckets[key] || [];
-        buckets[key].push(r.value);
-    });
-    const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
-    return entries.map(([key, vals]) => ({
-        time: key,
-        value: vals.reduce((s, n) => s + n, 0) / vals.length,
-    }));
-}
-
-// Aggregate readings into daily buckets
-function aggregateDaily(readings: Reading[]): AggregatedPoint[] {
-    const buckets: Record<string, number[]> = {};
-    readings.forEach((r) => {
-        const d = new Date(r.recorded_at);
-        const key = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
-        buckets[key] = buckets[key] || [];
-        buckets[key].push(r.value);
-    });
-    const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
-    return entries.map(([key, vals]) => ({
-        time: key,
-        value: vals.reduce((s, n) => s + n, 0) / vals.length,
-    }));
-}
-
-// Aggregate readings into weekly buckets
-function aggregateWeekly(readings: Reading[]): AggregatedPoint[] {
-    const buckets: Record<string, number[]> = {};
-    readings.forEach((r) => {
-        const d = new Date(r.recorded_at);
-        const dayOfWeek = d.getUTCDay();
-        const diff = d.getUTCDate() - dayOfWeek;
-        const weekStart = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
-        const key = weekStart.toISOString();
-        buckets[key] = buckets[key] || [];
-        buckets[key].push(r.value);
-    });
-    const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
-    return entries.map(([key, vals]) => ({
-        time: key,
-        value: vals.reduce((s, n) => s + n, 0) / vals.length,
-    }));
-}
-
-// Aggregate readings into monthly buckets
-function aggregateMonthly(readings: Reading[]): AggregatedPoint[] {
-    const buckets: Record<string, number[]> = {};
-    readings.forEach((r) => {
-        const d = new Date(r.recorded_at);
-        const key = new Date(Date.UTC(d.getFullYear(), d.getMonth(), 1)).toISOString();
-        buckets[key] = buckets[key] || [];
-        buckets[key].push(r.value);
-    });
-    const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
-    return entries.map(([key, vals]) => ({
-        time: key,
-        value: vals.reduce((s, n) => s + n, 0) / vals.length,
-    }));
-}
-
-// Aggregate readings into yearly buckets
-function aggregateYearly(readings: Reading[]): AggregatedPoint[] {
-    const buckets: Record<string, number[]> = {};
-    readings.forEach((r) => {
-        const d = new Date(r.recorded_at);
-        const key = new Date(Date.UTC(d.getFullYear(), 0, 1)).toISOString();
-        buckets[key] = buckets[key] || [];
-        buckets[key].push(r.value);
-    });
-    const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
-    return entries.map(([key, vals]) => ({
-        time: key,
-        value: vals.reduce((s, n) => s + n, 0) / vals.length,
-    }));
-}
-
-function formatLabel(iso: string, interval: string) {
-    const d = new Date(iso);
-    if (interval === 'hourly') {
-        return d.toLocaleString(undefined, { month: "short", day: "2-digit", hour: "2-digit", hour12: false });
-    } else if (interval === 'daily') {
-        return d.toLocaleString(undefined, { month: "short", day: "2-digit" });
-    } else if (interval === 'weekly') {
-        return d.toLocaleString(undefined, { month: "short", day: "2-digit" });
-    } else if (interval === 'monthly') {
-        return d.toLocaleString(undefined, { month: "short", year: "2-digit" });
-    } else if (interval === 'yearly') {
-        return d.toLocaleString(undefined, { year: "numeric" });
-    }
-    return d.toLocaleString();
-}
-
-const AGGREGATION_OPTIONS = [
-    { value: 'hourly', label: 'Hourly' },
-    { value: 'daily', label: 'Daily' },
-    { value: 'weekly', label: 'Weekly' },
-    { value: 'monthly', label: 'Monthly' },
-    { value: 'yearly', label: 'Yearly' },
-];
 
 export default function TemperatureGraph({ readings, loading }: TemperatureGraphProps) {
     const [interval, setInterval] = useState<string>('daily');

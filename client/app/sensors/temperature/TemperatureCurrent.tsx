@@ -10,7 +10,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
-import { getThresholdColorClasses, getThresholdColorStyle } from '@/lib/utils';
+import { findThreshold, getStatusLabel, getThresholdColorStyle } from '@/lib/utils';
 import { useEffect, useState } from "react";
 import { Sensor, SensorWithReading, ThresholdColors } from "../types";
 
@@ -30,46 +30,6 @@ interface TemperatureCurrentProps {
 
 export default function TemperatureCurrent({ sensor, loading: parentLoading }: TemperatureCurrentProps) {
     const [sensorData, setSensorData] = useState<SensorWithReading | null>(null);
-
-    function findTemperatureThreshold(value: number, thresholds?: Sensor['thresholds']) {
-        const tempThresholds = thresholds?.temperature;
-        if (!Array.isArray(tempThresholds) || tempThresholds.length === 0) return null;
-
-        // Find the threshold that matches the current value
-        for (const threshold of tempThresholds) {
-            const { min, max } = threshold;
-
-            if ((min === undefined || value >= min) && (max === undefined || value <= max)) {
-                return threshold;
-            }
-        }
-
-        return null;
-    }
-
-    // Keep fallback mapping if thresholds/colors are missing
-    function getStatusClasses(status: string): string {
-        const statusLower = status.toLowerCase();
-
-        if (statusLower.includes('cold') || statusLower.includes('freezing')) {
-            return 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
-        }
-        if (statusLower.includes('hot') || statusLower.includes('extreme')) {
-            return 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300';
-        }
-        if (statusLower.includes('warm') || statusLower.includes('high')) {
-            return 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300';
-        }
-        if (statusLower.includes('normal') || statusLower.includes('ideal') || statusLower.includes('optimal')) {
-            return 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300';
-        }
-
-        return 'bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-300';
-    }
-
-    function getStatusLabel(status: string) {
-        return status.charAt(0).toUpperCase() + status.slice(1);
-    }
 
     useEffect(() => {
         async function fetchLatestReading() {
@@ -139,12 +99,10 @@ export default function TemperatureCurrent({ sensor, loading: parentLoading }: T
     // Sensor found and has data
     const currentTemp = sensorData.latestReading.value;
     const recordedAt = sensorData.latestReading.recorded_at;
-
-    const matchedThreshold = findTemperatureThreshold(currentTemp, sensorData.thresholds);
+    const matchedThreshold = findThreshold(currentTemp, sensorData.thresholds, 'temperature');
     const tempStatus = matchedThreshold?.name ?? 'Unknown';
     const statusLabel = getStatusLabel(tempStatus);
     const colorKey = (matchedThreshold?.color ?? 'none') as ThresholdColors;
-    const statusClasses = matchedThreshold ? getThresholdColorClasses(colorKey) : getStatusClasses(tempStatus);
     const statusStyle = matchedThreshold ? getThresholdColorStyle(colorKey) : undefined;
 
     return (
@@ -183,7 +141,7 @@ export default function TemperatureCurrent({ sensor, loading: parentLoading }: T
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span className="flex items-center gap-2 font-medium cursor-pointer">
-                                    <Badge className={statusClasses} style={statusStyle}>{statusLabel}</Badge>
+                                    <Badge style={statusStyle}>{statusLabel}</Badge>
                                 </span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
@@ -212,13 +170,13 @@ export default function TemperatureCurrent({ sensor, loading: parentLoading }: T
                     </div>
 
                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">Ideal Temp</span>
+                        <span className="text-muted-foreground">Ideal level</span>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span className="font-medium cursor-pointer">24-27°C</span>
                             </TooltipTrigger>
                             <TooltipContent>
-                                Ideal temperature range for koi growth and activity.
+                                Ideal range for koi growth and activity.
                             </TooltipContent>
                         </Tooltip>
                     </div>

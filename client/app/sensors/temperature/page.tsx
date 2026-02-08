@@ -1,6 +1,7 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { getTimeRangeMs } from '@/lib/utils';
 import { Settings } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -13,24 +14,6 @@ export default function TemperaturePage() {
     const [sensor, setSensor] = useState<Sensor | null>(null);
     const [readings, setReadings] = useState<Reading[]>([]);
     const [loading, setLoading] = useState(true);
-
-    // Helper function to get time range in milliseconds based on aggregation interval
-    const getTimeRangeMs = (interval: string): number => {
-        switch (interval) {
-            case 'hourly':
-                return 60 * 60 * 1000; // 1 hour
-            case 'daily':
-                return 24 * 60 * 60 * 1000; // 24 hours
-            case 'weekly':
-                return 7 * 24 * 60 * 60 * 1000; // 7 days
-            case 'monthly':
-                return 30 * 24 * 60 * 60 * 1000; // 30 days
-            case 'yearly':
-                return 365 * 24 * 60 * 60 * 1000; // 365 days
-            default:
-                return 24 * 60 * 60 * 1000; // default to daily
-        }
-    };
 
     useEffect(() => {
         async function fetchTemperatureSensor() {
