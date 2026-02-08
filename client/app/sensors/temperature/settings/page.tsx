@@ -12,11 +12,12 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { createClient } from '@/lib/supabase/client';
+import { getThresholdColorStyle } from '@/lib/utils';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Toaster, toast } from 'sonner';
-import { Sensor } from '../../types';
+import { Sensor, ThresholdColors } from '../../types';
 
 const SENSOR_TYPES = ['temperature', 'ph', 'turbidity', 'oxygen', 'water_level'];
 const AGGREGATION_INTERVALS = ['hourly', 'daily', 'weekly', 'monthly', 'yearly'];
@@ -25,7 +26,10 @@ interface ThresholdLevel {
     name: string;
     min?: number;
     max?: number;
+    color?: ThresholdColors;
 }
+
+const COLOR_OPTIONS: ThresholdColors[] = ['none', 'blue', 'green', 'yellow', 'orange', 'red'];
 
 export default function TempertureSettingsPage() {
     const [sensor, setSensor] = useState<Sensor | null>(null);
@@ -66,7 +70,21 @@ export default function TempertureSettingsPage() {
 
                 // Parse thresholds from the temperature key - now as array
                 if (data.thresholds && Array.isArray(data.thresholds.temperature)) {
-                    setThresholds(data.thresholds.temperature);
+                    // ensure color field exists on items (backwards compatibility) and normalize
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const normalizeColor = (c: any) => {
+                        const s = String(c ?? '').toLowerCase();
+                        return COLOR_OPTIONS.includes(s as ThresholdColors) ? (s as ThresholdColors) : 'none';
+                    };
+
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const parsed = data.thresholds.temperature.map((t: any) => ({
+                        name: t.name,
+                        min: t.min,
+                        max: t.max,
+                        color: normalizeColor(t.color),
+                    }));
+                    setThresholds(parsed);
                 }
             } catch (err) {
                 console.error('Error fetching sensor:', err);
@@ -81,7 +99,7 @@ export default function TempertureSettingsPage() {
 
     // Add a new threshold level
     const addThreshold = () => {
-        setThresholds([...thresholds, { name: '', min: undefined, max: undefined }]);
+        setThresholds([...thresholds, { name: '', min: undefined, max: undefined, color: 'none' }]);
     };
 
     // Update threshold level
@@ -90,7 +108,13 @@ export default function TempertureSettingsPage() {
         if (field === 'min' || field === 'max') {
             updatedThresholds[index][field] = value === '' ? undefined : Number(value);
         } else {
-            updatedThresholds[index][field as 'name'] = value as string;
+            // field can be 'name' or 'color' - normalize color values
+            if (field === 'color') {
+                const v = String(value ?? '').toLowerCase();
+                updatedThresholds[index].color = COLOR_OPTIONS.includes(v as ThresholdColors) ? (v as ThresholdColors) : 'none';
+            } else {
+                updatedThresholds[index][field as 'name'] = value as string;
+            }
         }
         setThresholds(updatedThresholds);
     };
@@ -125,11 +149,13 @@ export default function TempertureSettingsPage() {
             if (!sensor) throw new Error('Sensor not found');
 
             // Build thresholds object with array format
-            const thresholdsObj: Record<string, ThresholdLevel[]> = {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const thresholdsObj: Record<string, any[]> = {
                 temperature: thresholds.map((threshold) => ({
                     name: threshold.name,
                     ...(threshold.min !== undefined && { min: threshold.min }),
                     ...(threshold.max !== undefined && { max: threshold.max }),
+                    ...(threshold.color && threshold.color !== 'none' && { color: threshold.color }),
                 })),
             };
 
@@ -357,6 +383,34 @@ export default function TempertureSettingsPage() {
                                                         placeholder="e.g., 27"
                                                         value={threshold.max ?? ''}
                                                         onChange={(e) => updateThreshold(index, 'max', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="grid gap-2">
+                                                <Label htmlFor={`threshold-color-${index}`}>Color</Label>
+                                                <div className="flex items-center gap-3">
+                                                    <Select
+                                                        value={threshold.color || 'none'}
+                                                        onValueChange={(v) => updateThreshold(index, 'color', v)}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {COLOR_OPTIONS.map((c) => (
+                                                                <SelectItem key={c} value={c}>
+                                                                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+
+                                                    <div
+                                                        aria-hidden
+                                                        data-color={threshold.color}
+                                                        className="w-6 h-6 rounded"
+                                                        style={getThresholdColorStyle(threshold.color ?? 'none')}
                                                     />
                                                 </div>
                                             </div>

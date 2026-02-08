@@ -25,3 +25,5 @@ export interface SensorWithReading extends Sensor {
     latestReading: Reading | null;
     loading?: boolean;
 }
+
+export type ThresholdColors = 'none' | 'blue' | 'green' | 'yellow' | 'orange' | 'red';

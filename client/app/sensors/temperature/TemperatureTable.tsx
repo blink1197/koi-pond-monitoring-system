@@ -25,8 +25,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { getThresholdColorClasses, getThresholdColorStyle } from '@/lib/utils';
 import { useState } from 'react';
-import { Reading, Sensor } from "../types";
+import { Reading, Sensor, ThresholdColors } from "../types";
 
 interface TemperatureTableProps {
     sensor: Sensor | null;
@@ -92,6 +93,36 @@ function getStatusClasses(status: string): string {
 
 function getStatusLabel(status: string): string {
     return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+function findTemperatureThreshold(value: number, thresholds?: Sensor['thresholds']) {
+    const tempThresholds = thresholds?.temperature;
+    if (!Array.isArray(tempThresholds) || tempThresholds.length === 0) return null;
+
+    for (const threshold of tempThresholds) {
+        const { min, max } = threshold;
+        if ((min === undefined || value >= min) && (max === undefined || value <= max)) {
+            return threshold;
+        }
+    }
+
+    // fallback to closest if none matched
+    let closestThreshold = tempThresholds[0];
+    let closestDistance = Math.abs(value - (closestThreshold.max ?? closestThreshold.min ?? 0));
+
+    for (const threshold of tempThresholds.slice(1)) {
+        const thresholdCenter = threshold.max !== undefined && threshold.min !== undefined
+            ? (threshold.min + threshold.max) / 2
+            : threshold.max ?? threshold.min ?? 0;
+
+        const distance = Math.abs(value - thresholdCenter);
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestThreshold = threshold;
+        }
+    }
+
+    return closestThreshold;
 }
 
 function getPageItems(totalPages: number, currentPage: number): (number | 'ellipsis')[] {
@@ -193,9 +224,14 @@ export default function TemperatureTable({ sensor, readings, loading }: Temperat
                                     </TableCell>
                                     <TableCell className="text-center">
                                         {(() => {
-                                            const status = getTemperatureStatus(reading.value, sensor?.thresholds);
+                                            const matched = findTemperatureThreshold(reading.value, sensor?.thresholds);
+                                            const status = matched?.name ?? getTemperatureStatus(reading.value, sensor?.thresholds);
+                                            const colorKey = (matched?.color ?? 'none') as ThresholdColors;
+                                            const classes = matched ? getThresholdColorClasses(colorKey) : getStatusClasses(status);
+                                            const style = matched ? getThresholdColorStyle(colorKey) : undefined;
+
                                             return (
-                                                <Badge className={getStatusClasses(status)}>
+                                                <Badge className={classes} style={style}>
                                                     {getStatusLabel(status)}
                                                 </Badge>
                                             );

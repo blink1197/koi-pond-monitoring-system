@@ -10,8 +10,9 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { createClient } from "@/lib/supabase/client";
+import { getThresholdColorClasses, getThresholdColorStyle } from '@/lib/utils';
 import { useEffect, useState } from "react";
-import { Sensor, SensorWithReading } from "../types";
+import { Sensor, SensorWithReading, ThresholdColors } from "../types";
 
 const TempCardHeader = () => {
     return (
@@ -30,28 +31,26 @@ interface TemperatureCurrentProps {
 export default function TemperatureCurrent({ sensor, loading: parentLoading }: TemperatureCurrentProps) {
     const [sensorData, setSensorData] = useState<SensorWithReading | null>(null);
 
-    function getTemperatureStatus(value: number, thresholds?: Sensor['thresholds']): string {
+    function findTemperatureThreshold(value: number, thresholds?: Sensor['thresholds']) {
         const tempThresholds = thresholds?.temperature;
-        if (!Array.isArray(tempThresholds) || tempThresholds.length === 0) return 'Unknown';
+        if (!Array.isArray(tempThresholds) || tempThresholds.length === 0) return null;
 
         // Find the threshold that matches the current value
         for (const threshold of tempThresholds) {
             const { min, max } = threshold;
 
-            // Check if value falls within this threshold's range
             if ((min === undefined || value >= min) && (max === undefined || value <= max)) {
-                return threshold.name;
+                return threshold;
             }
         }
 
-        // If no threshold matches, return 'Unknown'
-        return 'Unknown';
+        return null;
     }
 
+    // Keep fallback mapping if thresholds/colors are missing
     function getStatusClasses(status: string): string {
         const statusLower = status.toLowerCase();
 
-        // Map status names to color classes
         if (statusLower.includes('cold') || statusLower.includes('freezing')) {
             return 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
         }
@@ -65,20 +64,11 @@ export default function TemperatureCurrent({ sensor, loading: parentLoading }: T
             return 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300';
         }
 
-        // Default to neutral gray
         return 'bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-300';
     }
 
     function getStatusLabel(status: string) {
         return status.charAt(0).toUpperCase() + status.slice(1);
-    }
-
-    function getThresholdInfo(status: string): { min?: number; max?: number } | null {
-        const tempThresholds = sensorData?.thresholds?.temperature;
-        if (!Array.isArray(tempThresholds)) return null;
-
-        const threshold = tempThresholds.find(t => t.name === status);
-        return threshold ? { min: threshold.min, max: threshold.max } : null;
     }
 
     useEffect(() => {
@@ -150,9 +140,12 @@ export default function TemperatureCurrent({ sensor, loading: parentLoading }: T
     const currentTemp = sensorData.latestReading.value;
     const recordedAt = sensorData.latestReading.recorded_at;
 
-    const tempStatus = getTemperatureStatus(currentTemp, sensorData.thresholds);
+    const matchedThreshold = findTemperatureThreshold(currentTemp, sensorData.thresholds);
+    const tempStatus = matchedThreshold?.name ?? 'Unknown';
     const statusLabel = getStatusLabel(tempStatus);
-    const statusClasses = getStatusClasses(tempStatus);
+    const colorKey = (matchedThreshold?.color ?? 'none') as ThresholdColors;
+    const statusClasses = matchedThreshold ? getThresholdColorClasses(colorKey) : getStatusClasses(tempStatus);
+    const statusStyle = matchedThreshold ? getThresholdColorStyle(colorKey) : undefined;
 
     return (
         <Card>
@@ -190,13 +183,14 @@ export default function TemperatureCurrent({ sensor, loading: parentLoading }: T
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span className="flex items-center gap-2 font-medium cursor-pointer">
-                                    <Badge className={statusClasses}>{statusLabel}</Badge>
+                                    <Badge className={statusClasses} style={statusStyle}>{statusLabel}</Badge>
                                 </span>
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
                                 {(() => {
-                                    const thresholdInfo = getThresholdInfo(tempStatus);
-                                    const { min, max } = thresholdInfo || {};
+                                    const threshold = matchedThreshold ?? null;
+                                    const min = threshold?.min;
+                                    const max = threshold?.max;
 
                                     if (min !== undefined && max !== undefined) {
                                         return `${tempStatus}: ${min}–${max}°C`;
