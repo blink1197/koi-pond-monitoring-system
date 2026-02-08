@@ -17,6 +17,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { useRouter } from "next/navigation"
 
 export function NavMain({
   items,
@@ -32,9 +33,10 @@ export function NavMain({
     }[]
   }[]
 }) {
+  const router = useRouter();
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
+      <SidebarGroupLabel onClick={() => router.push('/dashboard')} className="cursor-pointer">Dashboard</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <Collapsible

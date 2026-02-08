@@ -2,8 +2,7 @@
 
 import {
     ComponentIcon,
-    Radio,
-    Settings2,
+    Radio
 } from "lucide-react"
 import Image from "next/image"
 import * as React from "react"
@@ -41,12 +40,12 @@ const navMain = [
         isActive: true,
         items: [{ title: "Fish Feeder", url: "#" }],
     },
-    {
-        title: "Settings",
-        url: "#",
-        icon: Settings2,
-        items: [{ title: "General", url: "#" }],
-    },
+    // {
+    //     title: "Settings",
+    //     url: "#",
+    //     icon: Settings2,
+    //     items: [{ title: "General", url: "#" }],
+    // },
 ]
 
 export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
