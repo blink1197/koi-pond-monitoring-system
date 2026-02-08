@@ -1,6 +1,14 @@
 "use client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
 import {
     CartesianGrid,
     Line,
@@ -17,17 +25,20 @@ interface TemperatureGraphProps {
     loading: boolean;
 }
 
-// Aggregate readings into hourly buckets and return points for plotting
-function aggregateHourly(readings: Reading[]) {
+interface AggregatedPoint {
+    time: string;
+    value: number;
+}
+
+// Aggregate readings into hourly buckets
+function aggregateHourly(readings: Reading[]): AggregatedPoint[] {
     const buckets: Record<string, number[]> = {};
     readings.forEach((r) => {
         const d = new Date(r.recorded_at);
-        // bucket key ISO hour
         const key = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours())).toISOString();
         buckets[key] = buckets[key] || [];
         buckets[key].push(r.value);
     });
-
     const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
     return entries.map(([key, vals]) => ({
         time: key,
@@ -35,13 +46,100 @@ function aggregateHourly(readings: Reading[]) {
     }));
 }
 
-function formatLabel(iso: string) {
-    const d = new Date(iso);
-    // show local date hour e.g. "Feb 08 14:00"
-    return d.toLocaleString(undefined, { month: "short", day: "2-digit", hour: "2-digit", hour12: false });
+// Aggregate readings into daily buckets
+function aggregateDaily(readings: Reading[]): AggregatedPoint[] {
+    const buckets: Record<string, number[]> = {};
+    readings.forEach((r) => {
+        const d = new Date(r.recorded_at);
+        const key = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+        buckets[key] = buckets[key] || [];
+        buckets[key].push(r.value);
+    });
+    const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
+    return entries.map(([key, vals]) => ({
+        time: key,
+        value: vals.reduce((s, n) => s + n, 0) / vals.length,
+    }));
 }
 
+// Aggregate readings into weekly buckets
+function aggregateWeekly(readings: Reading[]): AggregatedPoint[] {
+    const buckets: Record<string, number[]> = {};
+    readings.forEach((r) => {
+        const d = new Date(r.recorded_at);
+        const dayOfWeek = d.getUTCDay();
+        const diff = d.getUTCDate() - dayOfWeek;
+        const weekStart = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), diff));
+        const key = weekStart.toISOString();
+        buckets[key] = buckets[key] || [];
+        buckets[key].push(r.value);
+    });
+    const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
+    return entries.map(([key, vals]) => ({
+        time: key,
+        value: vals.reduce((s, n) => s + n, 0) / vals.length,
+    }));
+}
+
+// Aggregate readings into monthly buckets
+function aggregateMonthly(readings: Reading[]): AggregatedPoint[] {
+    const buckets: Record<string, number[]> = {};
+    readings.forEach((r) => {
+        const d = new Date(r.recorded_at);
+        const key = new Date(Date.UTC(d.getFullYear(), d.getMonth(), 1)).toISOString();
+        buckets[key] = buckets[key] || [];
+        buckets[key].push(r.value);
+    });
+    const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
+    return entries.map(([key, vals]) => ({
+        time: key,
+        value: vals.reduce((s, n) => s + n, 0) / vals.length,
+    }));
+}
+
+// Aggregate readings into yearly buckets
+function aggregateYearly(readings: Reading[]): AggregatedPoint[] {
+    const buckets: Record<string, number[]> = {};
+    readings.forEach((r) => {
+        const d = new Date(r.recorded_at);
+        const key = new Date(Date.UTC(d.getFullYear(), 0, 1)).toISOString();
+        buckets[key] = buckets[key] || [];
+        buckets[key].push(r.value);
+    });
+    const entries = Object.entries(buckets).sort((a, b) => a[0].localeCompare(b[0]));
+    return entries.map(([key, vals]) => ({
+        time: key,
+        value: vals.reduce((s, n) => s + n, 0) / vals.length,
+    }));
+}
+
+function formatLabel(iso: string, interval: string) {
+    const d = new Date(iso);
+    if (interval === 'hourly') {
+        return d.toLocaleString(undefined, { month: "short", day: "2-digit", hour: "2-digit", hour12: false });
+    } else if (interval === 'daily') {
+        return d.toLocaleString(undefined, { month: "short", day: "2-digit" });
+    } else if (interval === 'weekly') {
+        return d.toLocaleString(undefined, { month: "short", day: "2-digit" });
+    } else if (interval === 'monthly') {
+        return d.toLocaleString(undefined, { month: "short", year: "2-digit" });
+    } else if (interval === 'yearly') {
+        return d.toLocaleString(undefined, { year: "numeric" });
+    }
+    return d.toLocaleString();
+}
+
+const AGGREGATION_OPTIONS = [
+    { value: 'hourly', label: 'Hourly' },
+    { value: 'daily', label: 'Daily' },
+    { value: 'weekly', label: 'Weekly' },
+    { value: 'monthly', label: 'Monthly' },
+    { value: 'yearly', label: 'Yearly' },
+];
+
 export default function TemperatureGraph({ readings, loading }: TemperatureGraphProps) {
+    const [interval, setInterval] = useState<string>('daily');
+
     if (loading) {
         return (
             <Card className="lg:col-span-2">
@@ -58,7 +156,31 @@ export default function TemperatureGraph({ readings, loading }: TemperatureGraph
         );
     }
 
-    const points = aggregateHourly(readings);
+    // Get aggregated data based on selected interval
+    const getAggregatedData = () => {
+        switch (interval) {
+            case 'hourly':
+                return aggregateHourly(readings);
+            case 'weekly':
+                return aggregateWeekly(readings);
+            case 'monthly':
+                return aggregateMonthly(readings);
+            case 'yearly':
+                return aggregateYearly(readings);
+            case 'daily':
+            default:
+                return aggregateDaily(readings);
+        }
+    };
+
+    const points = getAggregatedData();
+    const descriptionMap = {
+        hourly: 'Hourly average temperature',
+        daily: 'Daily average temperature',
+        weekly: 'Weekly average temperature',
+        monthly: 'Monthly average temperature',
+        yearly: 'Yearly average temperature',
+    };
 
     if (!points || points.length === 0) {
         return (
@@ -76,14 +198,29 @@ export default function TemperatureGraph({ readings, loading }: TemperatureGraph
         );
     }
 
-    // Recharts expects an array of objects; use formatted label for XAxis
-    const data = points.map((p) => ({ label: formatLabel(p.time), value: Number(p.value.toFixed(2)) }));
+    const data = points.map((p) => ({ label: formatLabel(p.time, interval), value: Number(p.value.toFixed(2)) }));
 
     return (
         <Card className="lg:col-span-2">
-            <CardHeader>
-                <CardTitle>Temperature Trend</CardTitle>
-                <CardDescription>Hourly average temperature</CardDescription>
+            <CardHeader className="overflow-visible">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <CardTitle>Temperature Trend</CardTitle>
+                        <CardDescription>{descriptionMap[interval as keyof typeof descriptionMap] || 'Temperature changes over time'}</CardDescription>
+                    </div>
+                    <Select value={interval} onValueChange={setInterval}>
+                        <SelectTrigger className="w-32 flex-shrink-0">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent side="bottom" align="end" sideOffset={4}>
+                            {AGGREGATION_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="h-64">

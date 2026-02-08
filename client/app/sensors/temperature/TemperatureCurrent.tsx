@@ -30,37 +30,55 @@ interface TemperatureCurrentProps {
 export default function TemperatureCurrent({ sensor, loading: parentLoading }: TemperatureCurrentProps) {
     const [sensorData, setSensorData] = useState<SensorWithReading | null>(null);
 
-    type TemperatureStatus = 'cold' | 'normal' | 'warm' | 'hot';
-
-    function getTemperatureStatus(value: number, thresholds?: Sensor['thresholds']): TemperatureStatus {
+    function getTemperatureStatus(value: number, thresholds?: Sensor['thresholds']): string {
         const tempThresholds = thresholds?.temperature;
-        if (!tempThresholds) return 'normal';
+        if (!Array.isArray(tempThresholds) || tempThresholds.length === 0) return 'Unknown';
 
-        if (tempThresholds.cold && value <= tempThresholds.cold.max) return 'cold';
-        if (tempThresholds.hot && value >= tempThresholds.hot.min) return 'hot';
-        if (tempThresholds.warm && value >= tempThresholds.warm.min && value <= tempThresholds.warm.max) return 'warm';
-        if (tempThresholds.normal && value >= tempThresholds.normal.min && value <= tempThresholds.normal.max) return 'normal';
+        // Find the threshold that matches the current value
+        for (const threshold of tempThresholds) {
+            const { min, max } = threshold;
 
-        return 'normal';
-    }
-
-    function getStatusClasses(status: TemperatureStatus): string {
-        switch (status) {
-            case 'cold':
-                return 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
-            case 'normal':
-                return 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300';
-            case 'warm':
-                return 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300';
-            case 'hot':
-                return 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300';
-            default:
-                return '';
+            // Check if value falls within this threshold's range
+            if ((min === undefined || value >= min) && (max === undefined || value <= max)) {
+                return threshold.name;
+            }
         }
+
+        // If no threshold matches, return 'Unknown'
+        return 'Unknown';
     }
 
-    function getStatusLabel(status: TemperatureStatus) {
+    function getStatusClasses(status: string): string {
+        const statusLower = status.toLowerCase();
+
+        // Map status names to color classes
+        if (statusLower.includes('cold') || statusLower.includes('freezing')) {
+            return 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
+        }
+        if (statusLower.includes('hot') || statusLower.includes('extreme')) {
+            return 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300';
+        }
+        if (statusLower.includes('warm') || statusLower.includes('high')) {
+            return 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300';
+        }
+        if (statusLower.includes('normal') || statusLower.includes('ideal') || statusLower.includes('optimal')) {
+            return 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300';
+        }
+
+        // Default to neutral gray
+        return 'bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-300';
+    }
+
+    function getStatusLabel(status: string) {
         return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+
+    function getThresholdInfo(status: string): { min?: number; max?: number } | null {
+        const tempThresholds = sensorData?.thresholds?.temperature;
+        if (!Array.isArray(tempThresholds)) return null;
+
+        const threshold = tempThresholds.find(t => t.name === status);
+        return threshold ? { min: threshold.min, max: threshold.max } : null;
     }
 
     useEffect(() => {
@@ -177,26 +195,18 @@ export default function TemperatureCurrent({ sensor, loading: parentLoading }: T
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
                                 {(() => {
-                                    const t = sensorData.thresholds?.temperature;
-                                    if (tempStatus === 'cold') {
-                                        const max = t?.cold?.max ?? '??';
-                                        return `Temperature is cold (≤ ${max}°C).`;
+                                    const thresholdInfo = getThresholdInfo(tempStatus);
+                                    const { min, max } = thresholdInfo || {};
+
+                                    if (min !== undefined && max !== undefined) {
+                                        return `${tempStatus}: ${min}–${max}°C`;
+                                    } else if (min !== undefined) {
+                                        return `${tempStatus}: ≥ ${min}°C`;
+                                    } else if (max !== undefined) {
+                                        return `${tempStatus}: ≤ ${max}°C`;
+                                    } else {
+                                        return `Status: ${tempStatus}`;
                                     }
-                                    if (tempStatus === 'normal') {
-                                        const min = t?.normal?.min ?? '??';
-                                        const max = t?.normal?.max ?? '??';
-                                        return `Temperature is normal (${min}–${max}°C).`;
-                                    }
-                                    if (tempStatus === 'warm') {
-                                        const min = t?.warm?.min ?? '??';
-                                        const max = t?.warm?.max ?? '??';
-                                        return `Temperature is warm (${min}–${max}°C). Monitor fish closely.`;
-                                    }
-                                    if (tempStatus === 'hot') {
-                                        const min = t?.hot?.min ?? '??';
-                                        return `Temperature is hot (≥ ${min}°C). Immediate action recommended.`;
-                                    }
-                                    return 'Temperature status unknown.';
                                 })()}
                             </TooltipContent>
                         </Tooltip>

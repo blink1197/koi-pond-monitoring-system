@@ -1,5 +1,8 @@
 'use client';
+import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { Settings } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Reading, Sensor } from '../types';
 import TemperatureCurrent from "./TemperatureCurrent";
@@ -10,6 +13,24 @@ export default function TemperaturePage() {
     const [sensor, setSensor] = useState<Sensor | null>(null);
     const [readings, setReadings] = useState<Reading[]>([]);
     const [loading, setLoading] = useState(true);
+
+    // Helper function to get time range in milliseconds based on aggregation interval
+    const getTimeRangeMs = (interval: string): number => {
+        switch (interval) {
+            case 'hourly':
+                return 60 * 60 * 1000; // 1 hour
+            case 'daily':
+                return 24 * 60 * 60 * 1000; // 24 hours
+            case 'weekly':
+                return 7 * 24 * 60 * 60 * 1000; // 7 days
+            case 'monthly':
+                return 30 * 24 * 60 * 60 * 1000; // 30 days
+            case 'yearly':
+                return 365 * 24 * 60 * 60 * 1000; // 365 days
+            default:
+                return 24 * 60 * 60 * 1000; // default to daily
+        }
+    };
 
     useEffect(() => {
         async function fetchTemperatureSensor() {
@@ -30,14 +51,17 @@ export default function TemperaturePage() {
 
             setSensor(sensorData);
 
-            // Fetch valid readings from last 24 hours
-            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            // Fetch valid readings based on aggregation interval
+            const aggregationInterval = sensorData.aggregation_interval || 'daily';
+            const timeRangeMs = getTimeRangeMs(aggregationInterval);
+            const cutoffTime = new Date(Date.now() - timeRangeMs).toISOString();
+
             const { data: readingsData, error: readingsError } = await supabase
                 .from("readings")
                 .select("*")
                 .eq("sensor_id", sensorData.id)
                 .eq("is_valid", true)
-                .gte("recorded_at", oneDayAgo)
+                .gte("recorded_at", cutoffTime)
                 .order("recorded_at", { ascending: false });
 
             if (readingsError) {
@@ -53,11 +77,19 @@ export default function TemperaturePage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-semibold">Temperature Details</h1>
-                <p className="text-sm text-muted-foreground">
-                    Latest temperature reading and sensor info
-                </p>
+            <div className='flex justify-between'>
+                <div>
+                    <h1 className="text-2xl font-semibold">Temperature Details</h1>
+                    <p className="text-sm text-muted-foreground">
+                        Latest temperature reading and sensor info
+                    </p>
+                </div>
+                <Button variant="outline" size="sm">
+                    <Link href="/sensors/temperature/settings" className="flex items-center gap-2">
+                        <Settings />
+                        Settings
+                    </Link>
+                </Button>
             </div>
 
             {/* Current temperature + graph */}

@@ -36,54 +36,61 @@ interface TemperatureTableProps {
 
 const ITEMS_PER_PAGE = 10;
 
-type TemperatureStatus = 'cold' | 'normal' | 'warm' | 'hot';
-
-interface TemperatureThresholds {
-    temperature?: {
-        cold?: { max: number };
-        normal?: { min: number; max: number };
-        warm?: { min: number; max: number };
-        hot?: { min: number };
-    };
-}
-
-function getTemperatureStatus(value: number, thresholds?: TemperatureThresholds): TemperatureStatus {
+function getTemperatureStatus(value: number, thresholds?: Sensor['thresholds']): string {
     const tempThresholds = thresholds?.temperature;
+    if (!Array.isArray(tempThresholds) || tempThresholds.length === 0) return 'Unknown';
 
-    if (!tempThresholds) return 'normal';
+    // First, try to find an exact match
+    for (const threshold of tempThresholds) {
+        const { min, max } = threshold;
 
-    if (tempThresholds.cold && value <= tempThresholds.cold.max) {
-        return 'cold';
-    }
-    if (tempThresholds.hot && value >= tempThresholds.hot.min) {
-        return 'hot';
-    }
-    if (tempThresholds.warm && value >= tempThresholds.warm.min && value <= tempThresholds.warm.max) {
-        return 'warm';
-    }
-    if (tempThresholds.normal && value >= tempThresholds.normal.min && value <= tempThresholds.normal.max) {
-        return 'normal';
+        // Check if value falls within this threshold's range
+        if ((min === undefined || value >= min) && (max === undefined || value <= max)) {
+            return threshold.name;
+        }
     }
 
-    return 'normal';
+    // If no exact match, find the closest threshold
+    let closestThreshold = tempThresholds[0];
+    let closestDistance = Math.abs(value - (closestThreshold.max ?? closestThreshold.min ?? 0));
+
+    for (const threshold of tempThresholds.slice(1)) {
+        const thresholdCenter = threshold.max !== undefined && threshold.min !== undefined
+            ? (threshold.min + threshold.max) / 2
+            : threshold.max ?? threshold.min ?? 0;
+
+        const distance = Math.abs(value - thresholdCenter);
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestThreshold = threshold;
+        }
+    }
+
+    return closestThreshold.name;
 }
 
-function getStatusClasses(status: TemperatureStatus): string {
-    switch (status) {
-        case 'cold':
-            return 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
-        case 'normal':
-            return 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300';
-        case 'warm':
-            return 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300';
-        case 'hot':
-            return 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300';
-        default:
-            return '';
+function getStatusClasses(status: string): string {
+    const statusLower = status.toLowerCase();
+
+    // Map status names to color classes
+    if (statusLower.includes('cold') || statusLower.includes('freezing')) {
+        return 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
     }
+    if (statusLower.includes('hot') || statusLower.includes('extreme')) {
+        return 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300';
+    }
+    if (statusLower.includes('warm') || statusLower.includes('high')) {
+        return 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300';
+    }
+    if (statusLower.includes('normal') || statusLower.includes('ideal') || statusLower.includes('optimal')) {
+        return 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300';
+    }
+
+    // Default to neutral gray
+    return 'bg-gray-50 text-gray-700 dark:bg-gray-950 dark:text-gray-300';
 }
 
-function getStatusLabel(status: TemperatureStatus): string {
+function getStatusLabel(status: string): string {
     return status.charAt(0).toUpperCase() + status.slice(1);
 }
 
