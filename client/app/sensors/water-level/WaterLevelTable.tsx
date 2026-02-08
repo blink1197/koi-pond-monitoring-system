@@ -102,7 +102,7 @@ export default function WaterLevelTable({ sensor, readings, loading }: WaterLeve
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="text-center">Water Level (cm)</TableHead>
+                                <TableHead className="text-center">Level (cm)</TableHead>
                                 <TableHead className="text-center">Recorded At</TableHead>
                                 <TableHead className="text-center">Status</TableHead>
                             </TableRow>
@@ -113,7 +113,7 @@ export default function WaterLevelTable({ sensor, readings, loading }: WaterLeve
                                     <TableCell className="font-medium text-center">
                                         {reading.value.toFixed(1)}
                                     </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground text-center">
+                                    <TableCell className="text-xs text-muted-foreground text-center">
                                         {new Date(reading.recorded_at).toLocaleString()}
                                     </TableCell>
                                     <TableCell className="text-center">

@@ -170,7 +170,7 @@ export default function TurbidityCard() {
             </CardHeader>
             <CardContent className="flex-1 text-center">
                 <div className="text-3xl font-bold">{currentTurbidity.toFixed(1)} NTU</div>
-                <p className="text-xs text-muted-foreground">{turbidityStatus} range</p>
+                <p className="text-xs text-muted-foreground">{turbidityStatus}</p>
             </CardContent>
             <CardFooter>
                 <Button variant="ghost" size="sm" asChild className="px-2">

@@ -113,7 +113,7 @@ export default function TemperatureTable({ sensor, readings, loading }: Temperat
                                     <TableCell className="font-medium text-center">
                                         {reading.value.toFixed(1)}
                                     </TableCell>
-                                    <TableCell className="text-sm text-muted-foreground text-center">
+                                    <TableCell className="text-xs text-muted-foreground text-center">
                                         {new Date(reading.recorded_at).toLocaleString()}
                                     </TableCell>
                                     <TableCell className="text-center">

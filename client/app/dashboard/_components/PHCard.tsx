@@ -170,7 +170,7 @@ export default function PHCard() {
             </CardHeader>
             <CardContent className="flex-1 text-center">
                 <div className="text-3xl font-bold">{currentPH.toFixed(1)} pH</div>
-                <p className="text-xs text-muted-foreground">{pHStatus} range</p>
+                <p className="text-xs text-muted-foreground">{pHStatus}</p>
             </CardContent>
             <CardFooter>
                 <Button variant="ghost" size="sm" asChild className="px-2">

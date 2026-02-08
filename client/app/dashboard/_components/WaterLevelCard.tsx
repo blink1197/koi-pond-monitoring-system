@@ -170,7 +170,7 @@ export default function WaterLevelCard() {
             </CardHeader>
             <CardContent className="flex-1 text-center">
                 <div className="text-3xl font-bold">{currentWaterLevel.toFixed(1)} cm</div>
-                <p className="text-xs text-muted-foreground">{waterLevelStatus} range</p>
+                <p className="text-xs text-muted-foreground">{waterLevelStatus}</p>
             </CardContent>
             <CardFooter>
                 <Button variant="ghost" size="sm" asChild className="px-2">

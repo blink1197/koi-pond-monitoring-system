@@ -170,7 +170,7 @@ export default function TemperatureCard() {
             </CardHeader>
             <CardContent className="flex-1 text-center">
                 <div className="text-3xl font-bold">{currentTemp.toFixed(1)}°C</div>
-                <p className="text-xs text-muted-foreground">{tempStatus} range</p>
+                <p className="text-xs text-muted-foreground">{tempStatus}</p>
             </CardContent>
             <CardFooter>
                 <Button variant="ghost" size="sm" asChild className="px-2">
