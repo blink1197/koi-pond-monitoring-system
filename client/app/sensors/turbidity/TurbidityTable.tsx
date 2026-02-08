@@ -102,7 +102,9 @@ export default function TurbidityTable({ sensor, readings, loading }: TurbidityT
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="text-center">Turbidity (NTU)</TableHead>
+                                <TableHead className="text-center text-xs md:text-sm">
+                                    Turbidity <br className="md:hidden" /> (NTU)
+                                </TableHead>
                                 <TableHead className="text-center">Recorded At</TableHead>
                                 <TableHead className="text-center">Status</TableHead>
                             </TableRow>
